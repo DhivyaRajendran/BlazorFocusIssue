@@ -41,7 +41,7 @@ Steps to reproduce the behavior:
  
  ### Expected behavior
  
- Resolve this exception (excpetion thrown only when bind onblur event with handler in WASM application)
+ Resolve this exception (exception thrown only when bind onblur event with handler in WASM application)
  
  ### Additional context
 ```
