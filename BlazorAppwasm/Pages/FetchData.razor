@@ -1,0 +1,91 @@
+﻿@page "/fetchdata"
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<h1>Weather forecast</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                @foreach (var cell in Cells)
+                {
+                    <th id="@cell.HeaderName" class="@cell.ClassName" tabindex="@cell.TabIndex" 
+                        @onclick="async (MouseEventArgs e) => await Focus(cell.HeaderName, cell)"
+                        @onkeydown="async (KeyboardEventArgs e) => { await Focus(cell.HeaderName, cell, e.Key); }"
+                        @onblur="@(async () => { await RemoveFocus(cell.HeaderName, cell); })">@cell.HeaderName</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<style>
+    .e-focused {
+        box-shadow:0 0 0 1px #0094ff inset;
+    }
+</style>
+
+@code {
+    private WeatherForecast[] forecasts;
+
+    public class HeaderCell {
+        public string HeaderName { get; set; }
+        public int TabIndex { get; set; }
+        public string ClassName { get; set; }
+    }
+
+    public List<HeaderCell> Cells = new List<HeaderCell>() { new HeaderCell() { HeaderName = "Date", TabIndex = -1, ClassName = "" }, new HeaderCell() { HeaderName = "Temp. (C)", TabIndex = -1 , ClassName ="" }, new HeaderCell() { HeaderName = "Temp. (F)", TabIndex = -1, ClassName = "" }, new HeaderCell() { HeaderName = "Summary", TabIndex = -1, ClassName = "" } };
+
+    protected override async Task OnInitializedAsync()
+    {
+        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
+    }
+
+    public async Task Focus(string id, HeaderCell cell, string key = null)
+    {
+        if (key == "Tab"  || string.IsNullOrEmpty(key))
+        {
+            var currentIndex = Cells.IndexOf(cell);
+            var nextCell = key != null ? Cells[currentIndex + 1] : Cells[currentIndex];
+            nextCell.TabIndex = 0;
+            nextCell.ClassName = "e-focused";
+            StateHasChanged();
+            await JSRuntime.InvokeVoidAsync("focusElement", nextCell.HeaderName);
+        }
+    }
+    public async Task RemoveFocus( string id, HeaderCell cell)
+    {
+        cell.TabIndex = -1;
+        cell.ClassName = "";
+        StateHasChanged();
+    }
+
+    public class WeatherForecast
+    {
+        public DateTime Date { get; set; }
+
+        public int TemperatureC { get; set; }
+
+        public string Summary { get; set; }
+
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+}
